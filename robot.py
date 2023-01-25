@@ -31,6 +31,7 @@ async def on_ready():
     guilds = [[g.name, g.id] for g in client.guilds]
     print("guilds:", *guilds)
 
+# TODO: make it only work in the doors channel
 @client.tree.command()
 async def doorbell(interaction: discord.Interaction):
     # TODO: ring the buzzer
