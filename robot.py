@@ -6,8 +6,9 @@ from discord import app_commands
 # load the secret token from .env file
 load_dotenv()
 token = os.getenv("TOKEN")
+guild = os.getenv("GUILD_ID")
 
-MY_GUILD = discord.Object(id=1067657862232428564)  # replace with your guild id
+MY_GUILD = discord.Object(id=guild)  # replace with your guild id
 
 # create client class for making slash commands
 class MyClient(discord.Client):
