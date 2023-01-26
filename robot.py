@@ -5,52 +5,59 @@ from discord import app_commands
 from gpiozero import Buzzer
 from time import sleep
 
-# set GPIO
-buzzer = Buzzer(17)
+# define client class
+class MyClient(discord.Client):
+    def __init__(self, *, intents: discord.Intents, guild):
+        super().__init__(intents=intents)
+        self.tree = app_commands.CommandTree(self)
+        self.guild = guild
 
-# load the secret token from .env file
+    # copies the global commands over to your guild.
+    async def setup_hook(self):
+        # run() -> login() -> setup_hook()
+        self.tree.copy_global_to(guild=self.guild)
+        await self.tree.sync(guild=self.guild)
+
+# load token and guild id from .env file
 load_dotenv()
 token = os.getenv("TOKEN")
 guild = os.getenv("GUILD_ID")
+GUILD = discord.Object(id=guild)
 
-MY_GUILD = discord.Object(id=guild)  # replace with your guild id
+# Pi3 GPIO pin for the buzzer
+buzzer = Buzzer(17)
 
-# create client class for making slash commands
-class MyClient(discord.Client):
-    def __init__(self, *, intents: discord.Intents):
-        super().__init__(intents=intents)
-        self.tree = app_commands.CommandTree(self)
-
-    async def setup_hook(self):
-        # This copies the global commands over to your guild.
-        self.tree.copy_global_to(guild=MY_GUILD)
-        await self.tree.sync(guild=MY_GUILD)
+# beep the buzzer
+async def beep(b: Buzzer):
+    # four fast beeps, wait, repeat
+    for _ in range(4):
+        for _ in range(4):
+            b.on()
+            sleep(0.07)
+            b.off()
+            sleep(0.07)
+        sleep(0.4)
 
 # set intents and create client
 intents = discord.Intents.default()
 intents.message_content = True
-client = MyClient(intents=intents)
+client = MyClient(intents=intents, guild=GUILD)
 
+# show status on successful login
 @client.event
 async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
+    print(f"We have logged in as {client.user}")
     guilds = [[g.name, g.id] for g in client.guilds]
     print("guilds:", *guilds)
 
-async def beep():
-    for _ in range(4):
-        for _ in range(4):
-            buzzer.on()
-            sleep(0.07)
-            buzzer.off()
-            sleep(0.07)
-        sleep(0.4)
-
-# TODO: make it only work in the doors channel
+# /doorbell command
 @client.tree.command()
 async def doorbell(interaction: discord.Interaction):
+    # TODO: should only work in the doors channel 
+    # TODO: restrict to times when the doors are locked
     await interaction.response.defer()
     await beep()
     await interaction.followup.send("Ding dong!")
 
 client.run(token)
+
