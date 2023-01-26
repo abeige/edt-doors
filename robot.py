@@ -51,7 +51,8 @@ async def beep():
 # TODO: make it only work in the doors channel
 @client.tree.command()
 async def doorbell(interaction: discord.Interaction):
+    await interaction.response.defer()
     await beep()
-    await interaction.response.send_message("Ding dong!")
+    await interaction.followup.send("Ding dong!")
 
 client.run(token)
