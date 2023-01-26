@@ -2,6 +2,8 @@ from dotenv import load_dotenv
 import os
 import discord
 from discord import app_commands
+import RPi.GPIO as GPIO
+from time import sleep
 
 # load the secret token from .env file
 load_dotenv()
@@ -35,7 +37,18 @@ async def on_ready():
 # TODO: make it only work in the doors channel
 @client.tree.command()
 async def doorbell(interaction: discord.Interaction):
-    # TODO: ring the buzzer
+    # set GPIO
+    GPIO.setmode(GPIO.BCM)
+    buzzer = 23
+    GPIO.setup(buzzer, GPIO.OUT)
+
+    # run forever loop
+    print("Beep")
+    GPIO.output(buzzer, GPIO.HIGH)
+    sleep(0.5) # delay in seconds
+    GPIO.output(buzzer, GPIO.LOW)
+    sleep(0.5)
+
     await interaction.response.send_message("Ding dong!")
 
 client.run(token)
