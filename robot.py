@@ -1,3 +1,6 @@
+# Author: Adam Beigel
+# Date: 2023-01-26
+
 from dotenv import load_dotenv
 import os
 import discord
@@ -12,7 +15,7 @@ class MyClient(discord.Client):
         self.tree = app_commands.CommandTree(self)
         self.guild = guild
 
-    # copies the global commands over to your guild.
+    # copies the global commands to the guild
     async def setup_hook(self):
         # run() -> login() -> setup_hook()
         self.tree.copy_global_to(guild=self.guild)
