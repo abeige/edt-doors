@@ -1,12 +1,13 @@
 # Author: Adam Beigel
 # Date: 2023-01-26
 
-from dotenv import load_dotenv
 import os
+from time import sleep
+
+from dotenv import load_dotenv
+from gpiozero import Buzzer
 import discord
 from discord import app_commands
-from gpiozero import Buzzer
-from time import sleep
 
 # define client class
 class MyClient(discord.Client):
