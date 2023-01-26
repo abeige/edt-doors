@@ -41,10 +41,8 @@ async def beep():
     for _ in range(4):
         for _ in range(4):
             buzzer.on()
-            print("on")
             sleep(0.07)
             buzzer.off()
-            print("off")
             sleep(0.07)
         sleep(0.4)
 
