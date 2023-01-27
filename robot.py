@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 import os
 import discord
 from discord import app_commands
-from gpiozero import Buzzer
-from time import sleep
+from gpiozero import Buzzer, LED
+import asyncio
 
 # define client class
 class MyClient(discord.Client):
@@ -33,10 +33,39 @@ async def beep(b: Buzzer):
     for _ in range(4):
         for _ in range(4):
             b.on()
-            sleep(0.07)
+            await asyncio.sleep(0.07)
             b.off()
-            sleep(0.07)
-        sleep(0.4)
+            await asyncio.sleep(0.07)
+        await asyncio.sleep(0.4)
+
+# Pi3 GPIO for the LEDs
+order = ["red", "green", "blue", "yellow"]
+led = {
+    "red": LED(6),
+    "green": LED(13),
+    "blue": LED(19),
+    "yellow": LED(26),
+}
+
+# flash the lights
+async def lights(led):
+    i = 0
+    direction = 1
+    for _ in range(40):
+        led[order[i]].on()
+        await asyncio.sleep(0.1)
+        led[order[i]].off()
+
+        # go back and forth
+        i += direction
+        if i == len(order):
+            i -= 2
+            direction *= -1
+        elif i == -1:
+            i += 2
+            direction *= -1
+    print(led.keys())
+
 
 # set intents and create client
 intents = discord.Intents.default()
@@ -56,8 +85,10 @@ async def doorbell(interaction: discord.Interaction):
     # TODO: should only work in the doors channel 
     # TODO: restrict to times when the doors are locked
     await interaction.response.defer()
-    await beep()
+    await(asyncio.gather(
+        beep(buzzer),
+        lights(led)
+    ))
     await interaction.followup.send("Ding dong!")
 
 client.run(token)
-
