@@ -10,6 +10,7 @@ from discord import app_commands
 from gpiozero import LED, TonalBuzzer
 from gpiozero.tones import Tone
 
+
 # define client class
 class MyClient(discord.Client):
     def __init__(self, *, intents: discord.Intents, guild):
@@ -23,13 +24,15 @@ class MyClient(discord.Client):
         self.tree.copy_global_to(guild=self.guild)
         await self.tree.sync(guild=self.guild)
 
+
 # load token and guild id from .env file
 load_dotenv()
 token = os.getenv("TOKEN")
 guild = os.getenv("GUILD_ID")
 GUILD = discord.Object(id=guild)
 
-# Pi3 GPIO pin for the buzzer
+
+# buzzer and song
 buzzer = TonalBuzzer(pin=17, mid_tone="C7", octaves=1)
 
 notes=[262,294,330,262,262,294,330,262,330,349,392,330,349,392,392,440,392,349,330,262,392,440,392,349,330,262,262,196,262,262,196,262]
@@ -44,6 +47,7 @@ async def song(b: TonalBuzzer):
         buzzer.stop()
         await asyncio.sleep(d * 0.1)
 
+
 # Pi3 GPIO for the LEDs
 order = ["red", "green", "blue", "yellow"]
 led = {
@@ -53,28 +57,28 @@ led = {
     "yellow": LED(26),
 }
 
+
 # flash the lights
 async def lights(led):
-    i = 0
-    direction = 1
-    for _ in range(85):
-        led[order[i]].on()
-        await asyncio.sleep(0.1)
-        led[order[i]].off()
+    while True:
+        # go foward
+        for i in range(4):
+            led[order[i]].on()
+            await asyncio.sleep(0.1)
+            led[order[i]].off()
 
-        # go back and forth
-        i += direction
-        if i == len(order):
-            i -= 2
-            direction *= -1
-        elif i == -1:
-            i += 2
-            direction *= -1
+        # go back
+        for i in range(3, -1, -1):
+            led[order[i]].on()
+            await asyncio.sleep(0.1)
+            led[order[i]].off()
+
 
 # set intents and create client
 intents = discord.Intents.default()
 intents.message_content = True
 client = MyClient(intents=intents, guild=GUILD)
+
 
 # show status on successful login
 @client.event
@@ -83,16 +87,22 @@ async def on_ready():
     guilds = [[g.name, g.id] for g in client.guilds]
     print("guilds:", *guilds)
 
+
 # /doorbell command
 @client.tree.command()
 async def doorbell(interaction: discord.Interaction):
     # TODO: should only work in the doors channel 
     # TODO: restrict to times when the doors are locked
     await interaction.response.defer()
-    await(asyncio.gather(
-        song(buzzer),
-        lights(led)
-    ))
+
+    # blink lights until the song is done playing
+    loop = asyncio.get_event_loop()
+    ledTask = asyncio.create_task(lights(led))
+    loop.run_until_complete(song(buzzer))
+    ledTask.cancel()
+    loop.close()
+
+    # send response
     await interaction.followup.send("Ding dong!")
 
 client.run(token)
