@@ -30,16 +30,15 @@ guild = os.getenv("GUILD_ID")
 GUILD = discord.Object(id=guild)
 
 # Pi3 GPIO pin for the buzzer
-buzzer = TonalBuzzer(pin=17, mid_tone="C7", octaves=1)
-
-notes=[262,294,330,262,262,294,330,262,330,349,392,330,349,392,392,440,392,349,330,262,392,440,392,349,330,262,262,196,262,262,196,262]
-duration=[0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,1,0.5,0.5,1,0.25,0.25,0.25,0.25,0.5,0.5,0.25,0.25,0.25,0.25,0.5,0.5,0.5,0.5,1,0.5,0.5,1]
+buzzer = TonalBuzzer(pin=17, mid_tone="C6", octaves=1)
+notes = ['D5', 'E5', 'G5', 'G5', 'B5', 'A5', 'G5', 'A5', 'A5', 'G5', 'G5', 'A5', 'B5', 'B5', 'D6', 'C6', 'B5', 'C6', 'C6', 'D6', 'B5', 'B5', 'C6', 'D6', 'E6', 'D6', 'C6', 'A5', 'B5', 'C6', 'D6', 'C6', 'B5', 'G5', 'F#5', 'G5', 'B5', 'A5', 'F#5', 'G5']
+duration = [0.5, 0.5, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 0.5, 0.5, 1, 1, 1, 0.5, 0.5, 1, 0.5, 0.5, 1, 0.5, 0.5, 1, 0.5, 0.5, 1, 0.5, 0.5, 1, 0.5, 0.5, 1, 0.5, 0.5, 1, 1, 1, 1, 2]
 
 async def song(b: TonalBuzzer):
     for n, d in zip(notes, duration):
-        d = d/2
+        d = d/3
         tone = Tone(n)
-        buzzer.play(tone.up(35))
+        buzzer.play(tone.up(4)) # D6 24 up
         await asyncio.sleep(d)
         buzzer.stop()
         await asyncio.sleep(d * 0.1)
@@ -57,7 +56,7 @@ led = {
 async def lights(led):
     i = 0
     direction = 1
-    for _ in range(85):
+    for _ in range(110):
         led[order[i]].on()
         await asyncio.sleep(0.1)
         led[order[i]].off()
@@ -86,14 +85,15 @@ async def on_ready():
 # /doorbell command
 @client.tree.command()
 async def doorbell(interaction: discord.Interaction):
-    # TODO: should only work in the doors channel 
     # TODO: restrict to times when the doors are locked
-    await interaction.response.defer()
-    await(asyncio.gather(
-        song(buzzer),
-        lights(led)
-    ))
-    await interaction.followup.send("Ding dong!")
+    if (interaction.channel.name == "doors"):
+        await interaction.response.defer()
+        await(asyncio.gather(
+            song(buzzer),
+            lights(led)
+        ))
+        await interaction.followup.send("Ding dong!")
+    else:
+        await interaction.response.send_message("This command cannot be used in this channel.")
 
 client.run(token)
-
